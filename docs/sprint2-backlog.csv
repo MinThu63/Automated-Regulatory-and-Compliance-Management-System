@@ -1,0 +1,14 @@
+User Story ID,Sprint Backlog Item,Assign To,Estimated Effort-hour,Day 1,Day 2,Day 3,Day 4,Priority
+20,"As a compliance officer, I want the dashboard to have a professional sidebar navigation layout with 10 views, so that I can easily switch between different compliance management functions without page reloads. (Frontend: sidebar, view switching, login page, welcome banner, footer)",Min Thu,5,4,2,1,0,Must Have
+05,"As a compliance officer, I want to view a list of all regulatory alerts with severity badges and status indicators, so that I can quickly identify which alerts require immediate attention.",Eaint,4,3,2,0,0,Must Have
+06,"As a compliance officer, I want to update the status of an alert (Unread, Read, Dismissed) directly from the dashboard, so that I can track which alerts have been reviewed.",Eaint,2,1,0,0,0,Must Have
+07,"As a compliance officer, I want to filter alerts by severity level and status, so that I can focus on the most critical alerts first.",Eaint,2,1,0,0,0,Must Have
+08,"As a compliance officer, I want to view a reports dashboard showing regulatory changes by category and alert trends over time, so that I can analyze compliance patterns and prepare management reports. (Frontend: 4 tabbed pages, 5 Chart.js charts)",Kay,5,4,2,1,0,Must Have
+10,"As a compliance officer, I want to add a new compliance task with an assignee and deadline, so that regulatory changes can be assigned to team members for action. (Frontend: add task form)",Kay,4,3,2,0,0,Must Have
+11,"As a compliance officer, I want to update the status of a task and delete completed or unnecessary tasks, so that the task list remains current and actionable. (Frontend: status dropdown, delete button)",Kay,2,1,0,0,0,Must Have
+13,"As a compliance officer, I want to add a new compliance gap and update gap statuses, so that identified gaps are tracked through to remediation. (Frontend: gap CRUD form and status dropdown)",Hsu,3,2,1,0,0,Must Have
+16,"As a compliance officer, I want to view all detected regulation changes with version history and impact scores, so that I can understand what changed between regulation versions.",Hsu,2,1,0,0,0,Must Have
+17,"As a compliance officer, I want to view an impact assessment dashboard with severity summary cards and prioritized sorting, so that I can quickly identify the highest-risk regulatory changes.",Hsu,3,2,1,0,0,Must Have
+14 and 15,"As a compliance officer, I want to view and add regulatory sources and view, add, and edit regulations in the knowledge base. (Frontend: Sources view + Regulations view with add/edit forms, search bar, pagination)",Min Thu,5,4,2,1,0,Must Have
+18 and 19,"As a compliance officer, I want to view and manage internal bank policies and view a searchable audit trail. (Frontend: Policies view with add/edit + Audit trail view with filter controls)",Min Thu,4,3,2,0,0,Must Have
+,Total Story Points: 28,Total effort-hour:,41,29,14,3,0,

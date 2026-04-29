@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GLDB Compliance Portal</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🛡️</text></svg>">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="styles.css" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Login Overlay -->
+  <div id="loginOverlay">
+    <div class="card shadow-lg" style="width: 400px; border-radius: 16px;">
+      <div class="card-body p-5">
+        <div class="text-center mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#0d6efd" viewBox="0 0 16 16">
+            <path d="M5.338 1.59a61 61 0 0 0-2.837.856.48.48 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.7 10.7 0 0 0 2.287 2.233c.346.244.652.42.893.533q.18.085.293.118a1 1 0 0 0 .101.025 1 1 0 0 0 .1-.025q.114-.034.294-.118c.24-.113.547-.29.893-.533a10.7 10.7 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.8 11.8 0 0 1-2.517 2.453 7 7 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7 7 0 0 1-1.048-.625 11.8 11.8 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 63 63 0 0 1 5.072.56"/>
+            <path d="M10.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0"/>
+          </svg>
+          <h4 class="mt-3 fw-bold">Green Link Digital Bank</h4>
+          <p class="text-muted">Compliance Management Portal</p>
+        </div>
+        <div id="loginError" class="alert alert-danger d-none" role="alert"></div>
+        <form id="loginForm">
+          <div class="mb-3">
+            <label for="loginEmail" class="form-label fw-semibold">Email</label>
+            <input type="email" class="form-control" id="loginEmail" placeholder="alex.tan@gldb.com" required>
+          </div>
+          <div class="mb-3">
+            <label for="loginPassword" class="form-label fw-semibold">Password</label>
+            <input type="password" class="form-control" id="loginPassword" placeholder="Enter password" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">Sign In</button>
+        </form>
+        <p class="text-muted text-center mt-3" style="font-size: 0.75rem;">Demo: officer@gldb.com / 123456</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container">
+    <div id="toastNotification" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body" id="toastMessage">Action completed successfully.</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header Navigation Bar -->
+  <nav class="navbar navbar-expand-lg bg-dark navbar-dark sticky-top shadow-sm">
+    <div class="container-fluid">
+      <!-- GLDB Brand -->
+      <a class="navbar-brand d-flex align-items-center" href="#">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="#4ade80" class="me-2" viewBox="0 0 16 16">
+          <path d="M5.338 1.59a61 61 0 0 0-2.837.856.48.48 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.7 10.7 0 0 0 2.287 2.233c.346.244.652.42.893.533q.18.085.293.118a1 1 0 0 0 .101.025 1 1 0 0 0 .1-.025q.114-.034.294-.118c.24-.113.547-.29.893-.533a10.7 10.7 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.8 11.8 0 0 1-2.517 2.453 7 7 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7 7 0 0 1-1.048-.625 11.8 11.8 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 63 63 0 0 1 5.072.56"/>
+          <path d="M10.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0"/>
+        </svg>
+        <div>
+          <span class="fw-bold" style="font-size: 1.1rem;">GLDB</span>
+          <span class="d-none d-md-inline text-white-50 ms-2" style="font-size: 0.8rem;">Compliance Portal</span>
+        </div>
+      </a>
+
+      <!-- Center Nav Links -->
+      <div class="d-none d-lg-flex align-items-center gap-1">
+        <span class="badge bg-success bg-opacity-25 text-success-emphasis border border-success-subtle px-2 py-1" style="font-size: 0.7rem;">
+          <span class="me-1">●</span> System Online
+        </span>
+        <span class="text-white-50 mx-2">|</span>
+        <span class="text-white-50" style="font-size: 0.75rem;">Digital Wholesale Bank • MAS Licensed • Singapore</span>
+      </div>
+
+      <!-- Right Side Controls -->
+      <div class="d-flex align-items-center gap-2">
+        <span class="last-synced d-none d-md-inline" id="lastSyncedTime"></span>
+        <button class="btn btn-outline-light btn-sm" id="darkModeBtn" onclick="toggleDarkMode()" title="Toggle Dark Mode">🌙</button>
+        <span class="user-badge d-none d-md-inline" id="headerUserBadge"></span>
+        <button class="btn btn-outline-light btn-sm d-none" id="logoutBtn" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Layout: Sidebar + Content -->
+  <div class="d-flex">
+
+    <!-- Sidebar Navigation -->
+    <div class="d-flex flex-column bg-dark text-white sidebar">
+      <div class="p-3">
+        <small class="text-uppercase text-secondary fw-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Navigation</small>
+      </div>
+      <nav class="nav flex-column">
+        <a class="nav-link text-white active bg-primary rounded" href="#" onclick="showView('alerts'); return false;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2m.995-14.901a1 1 0 1 0-1.99 0A5 5 0 0 0 3 6c0 1.098-.5 6-2 7h14c-1.5-1-2-5.902-2-7 0-2.42-1.72-4.44-4.005-4.901"/>
+          </svg>
+          Alerts
+        </a>
+        <a class="nav-link text-white" href="#" onclick="showView('reports'); return false;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M4 11H2v3h2zm5-4H7v7h2zm5-5h-2v12h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z"/>
+          </svg>
+          Reports
+        </a>
+        <a class="nav-link text-white" href="#" onclick="showView('tasks'); return false;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"/>
+            <path d="M10.97 4.97a.75.75 0 0 1 1.071 1.05l-3.992 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/>
+          </svg>
+          Tasks
+        </a>
+        <a class="nav-link text-white" href="#" onclick="showView('gaps'); return false;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+            <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
+          </svg>
+          Gaps
+        </a>
+        <a class="nav-link text-white" href="#" onclick="showView('sources'); return false;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M4.318 2.687C5.234 2.271 6.536 2 8 2s2.766.27 3.682.687C12.644 3.125 13 3.627 13 4c0 .374-.356.875-1.318 1.313C10.766 5.729 9.464 6 8 6s-2.766-.27-3.682-.687C3.356 4.875 3 4.373 3 4c0-.374.356-.875 1.318-1.313M13 5.698V7c0 .374-.356.875-1.318 1.313C10.766 8.729 9.464 9 8 9s-2.766-.27-3.682-.687C3.356 7.875 3 7.373 3 7V5.698c.271.202.58.378.904.525C4.978 6.711 6.427 7 8 7s3.022-.289 4.096-.777A5 5 0 0 0 13 5.698M14 4c0-1.007-.875-1.755-1.904-2.223C11.022 1.289 9.573 1 8 1s-3.022.289-4.096.777C2.875 2.245 2 2.993 2 4v9c0 1.007.875 1.755 1.904 2.223C4.978 15.711 6.427 16 8 16s3.022-.289 4.096-.777C13.125 14.755 14 14.007 14 13zm-1 4.698V10c0 .374-.356.875-1.318 1.313C10.766 11.729 9.464 12 8 12s-2.766-.27-3.682-.687C3.356 10.875 3 10.373 3 10V8.698c.271.202.58.378.904.525C4.978 9.711 6.427 10 8 10s3.022-.289 4.096-.777A5 5 0 0 0 13 8.698M13 13v-1.302a5 5 0 0 1-.904.525C11.022 12.711 9.573 13 8 13s-3.022-.289-4.096-.777A5 5 0 0 1 3 11.698V13c0 .374.356.875 1.318 1.313C5.234 14.729 6.536 15 8 15s2.766-.27 3.682-.687C12.644 13.875 13 13.373 13 13"/>
+          </svg>
+          Sources
+        </a>
+        <a class="nav-link text-white" href="#" onclick="showView('regulations'); return false;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783"/>
+          </svg>
+          Regulations
+        </a>
+        <a class="nav-link text-white" href="#" onclick="showView('changes'); return false;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
+            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
+          </svg>
+          Changes
+        </a>
+        <a class="nav-link text-white" href="#" onclick="showView('impact'); return false;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M11.251.068a.5.5 0 0 1 .227.58L9.677 6.5H13a.5.5 0 0 1 .364.843l-8 8.5a.5.5 0 0 1-.842-.49L6.323 9.5H3a.5.5 0 0 1-.364-.843l8-8.5a.5.5 0 0 1 .615-.09z"/>
+          </svg>
+          Impact
+        </a>
+        <a class="nav-link text-white" href="#" onclick="showView('policies'); return false;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M5.338 1.59a61 61 0 0 0-2.837.856.48.48 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.7 10.7 0 0 0 2.287 2.233c.346.244.652.42.893.533q.18.085.293.118a1 1 0 0 0 .101.025 1 1 0 0 0 .1-.025q.114-.034.294-.118c.24-.113.547-.29.893-.533a10.7 10.7 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.8 11.8 0 0 1-2.517 2.453 7 7 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7 7 0 0 1-1.048-.625 11.8 11.8 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 63 63 0 0 1 5.072.56"/>
+          </svg>
+          Policies
+        </a>
+        <a class="nav-link text-white" href="#" onclick="showView('audit'); return false;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5"/>
+            <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1h1v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v1H1V2a2 2 0 0 1 2-2"/>
+            <path d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1z"/>
+          </svg>
+          Audit Trail
+        </a>
+      </nav>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-grow-1 p-4 bg-light">
+
+      <!-- Error Message -->
+      <div id="errorMsg" class="alert alert-danger d-none" role="alert"></div>
+
+      <!-- Welcome Banner -->
+      <div id="welcomeBanner" class="welcome-banner d-none">
+        <h5 id="welcomeText">Welcome back!</h5>
+        <p id="welcomeSummary">Loading your compliance overview...</p>
+      </div>
+
+      <!-- ==================== ALERTS VIEW ==================== -->
+      <div id="view-alerts">
+
+        <!-- Summary Cards Row -->
+        <div class="row g-3 mb-4">
+          <div class="col">
+            <div class="card summary-card bg-primary text-white shadow-sm h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="card-subtitle mb-1 text-white-50">Total Alerts</h6>
+                    <h2 class="card-title mb-0"><span id="cardTotal">0</span></h2>
+                  </div>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" opacity="0.5" viewBox="0 0 16 16">
+                    <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2m.995-14.901a1 1 0 1 0-1.99 0A5 5 0 0 0 3 6c0 1.098-.5 6-2 7h14c-1.5-1-2-5.902-2-7 0-2.42-1.72-4.44-4.005-4.901"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card summary-card bg-danger text-white shadow-sm h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="card-subtitle mb-1 text-white-50">Unread</h6>
+                    <h2 class="card-title mb-0"><span id="cardUnread">0</span></h2>
+                  </div>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" opacity="0.5" viewBox="0 0 16 16">
+                    <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card summary-card bg-danger text-white shadow-sm h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="card-subtitle mb-1 text-white-50">Immediate Action</h6>
+                    <h2 class="card-title mb-0"><span id="cardImmediate">0</span></h2>
+                  </div>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" opacity="0.5" viewBox="0 0 16 16">
+                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card summary-card bg-warning text-dark shadow-sm h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="card-subtitle mb-1 opacity-75">Review Recommended</h6>
+                    <h2 class="card-title mb-0"><span id="cardReview">0</span></h2>
+                  </div>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" opacity="0.5" viewBox="0 0 16 16">
+                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.399l-.502.001-.082-.381 2.02-.637z"/>
+                    <path d="M8 5.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card summary-card bg-info text-white shadow-sm h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="card-subtitle mb-1 text-white-50">Informational</h6>
+                    <h2 class="card-title mb-0"><span id="cardInformational">0</span></h2>
+                  </div>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" opacity="0.5" viewBox="0 0 16 16">
+                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.399l-.502.001-.082-.381 2.02-.637z"/>
+                    <path d="M8 5.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-4">
+                <label for="filterSeverity" class="form-label fw-semibold text-secondary">Severity Level</label>
+                <select id="filterSeverity" class="form-select">
+                  <option value="">All</option>
+                  <option value="Immediate Action Required">Immediate Action Required</option>
+                  <option value="Review Recommended">Review Recommended</option>
+                  <option value="Informational">Informational</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="filterStatus" class="form-label fw-semibold text-secondary">Status</label>
+                <select id="filterStatus" class="form-select">
+                  <option value="">All</option>
+                  <option value="Unread">Unread</option>
+                  <option value="Read">Read</option>
+                  <option value="Dismissed">Dismissed</option>
+                </select>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <button class="btn btn-outline-success btn-sm" onclick="exportTableCSV('alerts')">📥 Export CSV</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alerts Table -->
+        <div class="card shadow-sm">
+          <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Alert ID</th>
+                  <th>Regulation Title</th>
+                  <th>Severity Level</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="alertsBody"></tbody>
+            </table>
+          </div>
+          <div class="card-footer bg-white" id="alertsPagination"></div>
+        </div>
+
+      </div>
+      <!-- END ALERTS VIEW -->
+
+      <!-- ==================== REPORTS VIEW ==================== -->
+      <div id="view-reports" class="d-none">
+
+        <!-- Report Header with Print Button -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="mb-0">Reports & Analytics</h4>
+          <button class="btn btn-outline-primary btn-sm" onclick="printReport()">🖨️ Print Report</button>
+        </div>
+
+        <!-- Report Tabs Navigation -->
+        <ul class="nav nav-tabs mb-4" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active" href="#" onclick="showReportTab('overview'); return false;" id="reportTab-overview">Overview</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" onclick="showReportTab('trends'); return false;" id="reportTab-trends">Trends & Timeline</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" onclick="showReportTab('categories'); return false;" id="reportTab-categories">Categories & Impact</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" onclick="showReportTab('status'); return false;" id="reportTab-status">Compliance Status</a>
+          </li>
+        </ul>
+
+        <!-- Report Tab: Overview (Page 1) -->
+        <div id="reportPage-overview">
+          <div class="row g-4 mb-4">
+            <div class="col-md-6">
+              <h5 class="mb-3">Alert Severity Distribution</h5>
+              <div class="card shadow-sm">
+                <div class="card-body">
+                  <canvas id="severityPieChart" height="250"></canvas>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <h5 class="mb-3">Task Status Overview</h5>
+              <div class="card shadow-sm">
+                <div class="card-body">
+                  <canvas id="taskStatusChart" height="250"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Report Tab: Trends (Page 2) -->
+        <div id="reportPage-trends" class="d-none">
+          <h5 class="mb-3">Alert Trends Over Time</h5>
+          <div class="card shadow-sm mb-4">
+            <div class="card-body">
+              <canvas id="trendChart" height="120"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Report Tab: Categories & Impact (Page 3) -->
+        <div id="reportPage-categories" class="d-none">
+          <div class="row g-4 mb-4">
+            <div class="col-md-6">
+              <h5 class="mb-3">Regulation Changes by Category</h5>
+              <div class="card shadow-sm">
+                <div class="card-body">
+                  <canvas id="categoryBarChart" height="250"></canvas>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <h5 class="mb-3">Impact Score Distribution</h5>
+              <div class="card shadow-sm">
+                <div class="card-body">
+                  <canvas id="impactDoughnutChart" height="250"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+          <h5 class="mb-3 mt-4">Category Breakdown Table</h5>
+          <div class="card shadow-sm">
+            <div class="card-body p-0">
+              <table class="table table-striped table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Category</th>
+                    <th>Change Count</th>
+                  </tr>
+                </thead>
+                <tbody id="categoriesBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Report Tab: Compliance Status (Page 4) -->
+        <div id="reportPage-status" class="d-none">
+          <h5 class="mb-3">Compliance Status</h5>
+          <div class="card shadow-sm mb-4">
+            <div class="card-body" id="complianceStatus">
+              <p class="text-muted">Loading compliance status...</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <!-- END REPORTS VIEW -->
+
+      <!-- ==================== TASKS VIEW ==================== -->
+      <div id="view-tasks" class="d-none">
+
+        <h4 class="mb-3">Outstanding Tasks</h4>
+
+        <!-- Add Task Form -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <form id="taskForm">
+              <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                  <label for="taskTitleInput" class="form-label fw-semibold text-secondary">Title</label>
+                  <input type="text" class="form-control" id="taskTitleInput" placeholder="Task title" required>
+                </div>
+                <div class="col-md-3">
+                  <label for="taskDescInput" class="form-label fw-semibold text-secondary">Description</label>
+                  <input type="text" class="form-control" id="taskDescInput" placeholder="Task description">
+                </div>
+                <div class="col-md-2">
+                  <label for="taskUserSelect" class="form-label fw-semibold text-secondary">Assignee</label>
+                  <select class="form-select" id="taskUserSelect" required>
+                    <option value="">Select user...</option>
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <label for="taskDeadlineInput" class="form-label fw-semibold text-secondary">Deadline</label>
+                  <input type="date" class="form-control" id="taskDeadlineInput" required>
+                </div>
+                <div class="col-md-2">
+                  <label for="taskAlertSelect" class="form-label fw-semibold text-secondary">Alert (optional)</label>
+                  <select class="form-select" id="taskAlertSelect">
+                    <option value="">None</option>
+                  </select>
+                </div>
+                <div class="col-md-12">
+                  <button type="submit" class="btn btn-primary">Add Task</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card shadow-sm">
+          <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Title</th>
+                  <th>Description</th>
+                  <th>Assignee</th>
+                  <th>Deadline</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tasksBody"></tbody>
+            </table>
+          </div>
+          <div class="card-footer bg-white" id="tasksPagination"></div>
+        </div>
+
+      </div>
+      <!-- END TASKS VIEW -->
+
+      <!-- ==================== GAPS VIEW ==================== -->
+      <div id="view-gaps" class="d-none">
+
+        <h4 class="mb-3">Compliance Gaps</h4>
+
+        <!-- Add Gap Form -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <form id="gapForm">
+              <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                  <label for="gapRegSelect" class="form-label fw-semibold text-secondary">Regulation</label>
+                  <select class="form-select" id="gapRegSelect" required>
+                    <option value="">Select regulation...</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label for="gapPolicySelect" class="form-label fw-semibold text-secondary">Policy</label>
+                  <select class="form-select" id="gapPolicySelect" required>
+                    <option value="">Select policy...</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="gapDescInput" class="form-label fw-semibold text-secondary">Gap Description</label>
+                  <textarea class="form-control" id="gapDescInput" rows="1" placeholder="Describe the compliance gap..." required></textarea>
+                </div>
+                <div class="col-md-2">
+                  <button type="submit" class="btn btn-primary w-100">Add Gap</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card shadow-sm">
+          <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Regulation</th>
+                  <th>Policy</th>
+                  <th>Gap Description</th>
+                  <th>Status</th>
+                  <th>Identified</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="gapsBody"></tbody>
+            </table>
+          </div>
+          <div class="card-footer bg-white" id="gapsPagination"></div>
+        </div>
+
+      </div>
+      <!-- END GAPS VIEW -->
+
+      <!-- ==================== SOURCES VIEW ==================== -->
+      <div id="view-sources" class="d-none">
+
+        <h4 class="mb-3">Regulatory Sources</h4>
+
+        <!-- Add Source Form -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <form id="sourceForm">
+              <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                  <label for="sourceNameInput" class="form-label fw-semibold text-secondary">Source Name</label>
+                  <input type="text" class="form-control" id="sourceNameInput" placeholder="e.g. MAS, FATF" required>
+                </div>
+                <div class="col-md-5">
+                  <label for="sourceUrlInput" class="form-label fw-semibold text-secondary">Base URL</label>
+                  <input type="text" class="form-control" id="sourceUrlInput" placeholder="https://www.example.com/regulation" required>
+                </div>
+                <div class="col-md-3">
+                  <button type="submit" class="btn btn-primary w-100">Add Source</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Sources Table -->
+        <div class="card shadow-sm">
+          <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Source Name</th>
+                  <th>Base URL</th>
+                  <th>Created Date</th>
+                </tr>
+              </thead>
+              <tbody id="sourcesBody"></tbody>
+            </table>
+          </div>
+          <div class="card-footer bg-white" id="sourcesPagination"></div>
+        </div>
+
+      </div>
+      <!-- END SOURCES VIEW -->
+
+      <!-- ==================== REGULATIONS VIEW ==================== -->
+      <div id="view-regulations" class="d-none">
+
+        <h4 class="mb-3">Regulations Knowledge Base</h4>
+
+        <!-- Search Bar -->
+        <div class="card shadow-sm mb-3">
+          <div class="card-body py-2">
+            <div class="input-group">
+              <input type="text" class="form-control" id="regSearchInput" placeholder="Search regulations by title or category...">
+              <button class="btn btn-primary" onclick="searchRegulations()">Search</button>
+              <button class="btn btn-outline-secondary" onclick="clearRegSearch()">Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Regulation Form -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <form id="regulationForm">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label for="regSourceSelect" class="form-label fw-semibold text-secondary">Source</label>
+                  <select class="form-select" id="regSourceSelect" required>
+                    <option value="">Select source...</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="regTitleInput" class="form-label fw-semibold text-secondary">Title</label>
+                  <input type="text" class="form-control" id="regTitleInput" placeholder="Regulation title" required>
+                </div>
+                <div class="col-md-4">
+                  <label for="regCategoryInput" class="form-label fw-semibold text-secondary">Category</label>
+                  <input type="text" class="form-control" id="regCategoryInput" placeholder="e.g. AML, KYC" required>
+                </div>
+                <div class="col-md-12">
+                  <label for="regContentInput" class="form-label fw-semibold text-secondary">Content</label>
+                  <textarea class="form-control" id="regContentInput" rows="3" placeholder="Regulation content..." required></textarea>
+                </div>
+                <div class="col-md-3">
+                  <label for="regVersionInput" class="form-label fw-semibold text-secondary">Version (optional)</label>
+                  <input type="text" class="form-control" id="regVersionInput" placeholder="e.g. 1.0">
+                </div>
+                <div class="col-md-3">
+                  <label for="regDateInput" class="form-label fw-semibold text-secondary">Published Date (optional)</label>
+                  <input type="date" class="form-control" id="regDateInput">
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                  <button type="submit" class="btn btn-primary">Add Regulation</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Edit Regulation Section (hidden by default) -->
+        <div id="editRegSection" class="d-none">
+          <div class="card shadow-sm mb-4 border-warning">
+            <div class="card-body">
+              <h5 class="card-title">Edit Regulation</h5>
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label for="editRegSourceSelect" class="form-label fw-semibold text-secondary">Source</label>
+                  <select class="form-select" id="editRegSourceSelect">
+                    <option value="">Select source...</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="editRegTitle" class="form-label fw-semibold text-secondary">Title</label>
+                  <input type="text" class="form-control" id="editRegTitle">
+                </div>
+                <div class="col-md-4">
+                  <label for="editRegCategory" class="form-label fw-semibold text-secondary">Category</label>
+                  <input type="text" class="form-control" id="editRegCategory">
+                </div>
+                <div class="col-md-12">
+                  <label for="editRegContent" class="form-label fw-semibold text-secondary">Content</label>
+                  <textarea class="form-control" id="editRegContent" rows="3"></textarea>
+                </div>
+                <div class="col-md-3">
+                  <label for="editRegVersion" class="form-label fw-semibold text-secondary">Version</label>
+                  <input type="text" class="form-control" id="editRegVersion">
+                </div>
+                <div class="col-md-3">
+                  <label for="editRegDate" class="form-label fw-semibold text-secondary">Published Date</label>
+                  <input type="date" class="form-control" id="editRegDate">
+                </div>
+                <div class="col-md-6 d-flex align-items-end gap-2">
+                  <button type="button" class="btn btn-warning" id="editRegUpdateBtn">Update</button>
+                  <button type="button" class="btn btn-secondary" id="editRegCancelBtn">Cancel</button>
+                </div>
+              </div>
+              <input type="hidden" id="editRegId">
+            </div>
+          </div>
+        </div>
+
+        <!-- Regulations Table -->
+        <div class="card shadow-sm">
+          <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Title</th>
+                  <th>Source</th>
+                  <th>Category</th>
+                  <th>Version</th>
+                  <th>Published Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="regulationsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-controls" id="regPagination">
+          <button class="btn btn-outline-primary btn-sm" id="regPrevBtn" onclick="changeRegPage(-1)" disabled>Previous</button>
+          <span class="pagination-info" id="regPageInfo">Page 1 of 1</span>
+          <button class="btn btn-outline-primary btn-sm" id="regNextBtn" onclick="changeRegPage(1)" disabled>Next</button>
+        </div>
+
+      </div>
+      <!-- END REGULATIONS VIEW -->
+
+      <!-- ==================== CHANGES VIEW ==================== -->
+      <div id="view-changes" class="d-none">
+
+        <h4 class="mb-3">Regulation Changes</h4>
+        <div class="card shadow-sm">
+          <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Regulation Title</th>
+                  <th>Previous Version</th>
+                  <th>New Version</th>
+                  <th>Impact Score</th>
+                  <th>Semantic Differences</th>
+                  <th>Detected Date</th>
+                </tr>
+              </thead>
+              <tbody id="changesBody"></tbody>
+            </table>
+          </div>
+          <div class="card-footer bg-white" id="changesPagination"></div>
+        </div>
+
+      </div>
+      <!-- END CHANGES VIEW -->
+
+      <!-- ==================== IMPACT VIEW ==================== -->
+      <div id="view-impact" class="d-none">
+
+        <h4 class="mb-3">Impact Assessment</h4>
+
+        <!-- Impact Summary Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col">
+            <div class="card summary-card bg-danger text-white shadow-sm h-100">
+              <div class="card-body text-center">
+                <h6 class="card-subtitle mb-1 text-white-50">Critical</h6>
+                <h2 class="card-title mb-0" id="impactCritical">0</h2>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card summary-card bg-warning text-dark shadow-sm h-100">
+              <div class="card-body text-center">
+                <h6 class="card-subtitle mb-1 opacity-75">High</h6>
+                <h2 class="card-title mb-0" id="impactHigh">0</h2>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card summary-card bg-info text-white shadow-sm h-100">
+              <div class="card-body text-center">
+                <h6 class="card-subtitle mb-1 text-white-50">Medium</h6>
+                <h2 class="card-title mb-0" id="impactMedium">0</h2>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card summary-card bg-success text-white shadow-sm h-100">
+              <div class="card-body text-center">
+                <h6 class="card-subtitle mb-1 text-white-50">Low</h6>
+                <h2 class="card-title mb-0" id="impactLow">0</h2>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Impact Filter -->
+        <div class="card shadow-sm mb-3">
+          <div class="card-body py-2">
+            <div class="row align-items-center">
+              <div class="col-md-3">
+                <label for="impactFilterSelect" class="form-label fw-semibold text-secondary mb-0">Filter by Impact Level</label>
+              </div>
+              <div class="col-md-3">
+                <select id="impactFilterSelect" class="form-select form-select-sm" onchange="filterImpact(this.value)">
+                  <option value="">All Levels</option>
+                  <option value="Critical">Critical</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Impact Table -->
+        <div class="card shadow-sm">
+          <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Regulation Title</th>
+                  <th>Version Change</th>
+                  <th>Impact Score</th>
+                  <th>Semantic Differences</th>
+                  <th>Detected Date</th>
+                </tr>
+              </thead>
+              <tbody id="impactBody"></tbody>
+            </table>
+          </div>
+          <div class="card-footer bg-white" id="impactPagination"></div>
+        </div>
+
+      </div>
+      <!-- END IMPACT VIEW -->
+
+      <!-- ==================== POLICIES VIEW ==================== -->
+      <div id="view-policies" class="d-none">
+
+        <h4 class="mb-3">Internal Policies</h4>
+
+        <!-- Add Policy Form -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <form id="policyForm">
+              <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                  <label for="policyNameInput" class="form-label fw-semibold text-secondary">Policy Name</label>
+                  <input type="text" class="form-control" id="policyNameInput" placeholder="e.g. GLDB KYC Policy" required>
+                </div>
+                <div class="col-md-7">
+                  <label for="policyDescInput" class="form-label fw-semibold text-secondary">Description</label>
+                  <textarea class="form-control" id="policyDescInput" rows="1" placeholder="Describe the policy..." required></textarea>
+                </div>
+                <div class="col-md-2">
+                  <button type="submit" class="btn btn-primary w-100">Add Policy</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Edit Policy Section (hidden by default) -->
+        <div id="editPolicySection" class="d-none">
+          <div class="card shadow-sm mb-4 border-warning">
+            <div class="card-body">
+              <h5 class="card-title">Edit Policy</h5>
+              <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                  <label for="editPolicyName" class="form-label fw-semibold text-secondary">Policy Name</label>
+                  <input type="text" class="form-control" id="editPolicyName">
+                </div>
+                <div class="col-md-5">
+                  <label for="editPolicyDesc" class="form-label fw-semibold text-secondary">Description</label>
+                  <textarea class="form-control" id="editPolicyDesc" rows="2"></textarea>
+                </div>
+                <div class="col-md-4 d-flex align-items-end gap-2">
+                  <button type="button" class="btn btn-warning" id="editPolicyUpdateBtn">Update</button>
+                  <button type="button" class="btn btn-secondary" id="editPolicyCancelBtn">Cancel</button>
+                </div>
+              </div>
+              <input type="hidden" id="editPolicyId">
+            </div>
+          </div>
+        </div>
+
+        <!-- Policies Table -->
+        <div class="card shadow-sm">
+          <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Policy Name</th>
+                  <th>Description</th>
+                  <th>Last Updated</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="policiesBody"></tbody>
+            </table>
+          </div>
+          <div class="card-footer bg-white" id="policiesPagination"></div>
+        </div>
+
+      </div>
+      <!-- END POLICIES VIEW -->
+
+      <!-- ==================== AUDIT TRAIL VIEW ==================== -->
+      <div id="view-audit" class="d-none">
+
+        <h4 class="mb-3">Audit Trail</h4>
+
+        <!-- Audit Filters -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-2">
+                <label for="auditUserSelect" class="form-label fw-semibold text-secondary">User</label>
+                <select class="form-select" id="auditUserSelect">
+                  <option value="">All Users</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label for="auditActionType" class="form-label fw-semibold text-secondary">Action Type</label>
+                <input type="text" class="form-control" id="auditActionType" placeholder="e.g. CREATE">
+              </div>
+              <div class="col-md-2">
+                <label for="auditTargetTable" class="form-label fw-semibold text-secondary">Target Table</label>
+                <input type="text" class="form-control" id="auditTargetTable" placeholder="e.g. tasks">
+              </div>
+              <div class="col-md-2">
+                <label for="auditStartDate" class="form-label fw-semibold text-secondary">Start Date</label>
+                <input type="date" class="form-control" id="auditStartDate">
+              </div>
+              <div class="col-md-2">
+                <label for="auditEndDate" class="form-label fw-semibold text-secondary">End Date</label>
+                <input type="date" class="form-control" id="auditEndDate">
+              </div>
+              <div class="col-md-2 d-flex gap-2">
+                <button type="button" class="btn btn-primary" id="auditApplyBtn">Apply Filters</button>
+                <button type="button" class="btn btn-outline-secondary" id="auditClearBtn">Clear Filters</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audit Logs Table -->
+        <div class="card shadow-sm">
+          <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Username</th>
+                  <th>Action Type</th>
+                  <th>Target Table</th>
+                  <th>Target ID</th>
+                  <th>Description</th>
+                  <th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody id="auditBody"></tbody>
+            </table>
+          </div>
+          <div class="card-footer bg-white" id="auditPagination"></div>
+        </div>
+
+      </div>
+      <!-- END AUDIT TRAIL VIEW -->
+
+    </div>
+    <!-- END Main Content Area -->
+
+  </div>
+  <!-- END Main Layout -->
+
+  <!-- Printable Report (hidden, shown only during print) -->
+  <div id="printableReport">
+    <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px;">
+      <h2 style="margin: 0;">Green Link Digital Bank</h2>
+      <p style="margin: 5px 0 0 0; color: #666;">Regulatory Compliance Report</p>
+      <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #999;" id="printDate"></p>
+    </div>
+    <div id="printContent"></div>
+  </div>
+
+  <!-- Footer -->
+  <div class="app-footer">
+    <strong>Green Link Digital Bank Pte. Ltd.</strong> | Digital Wholesale Bank Licensed by MAS | Compliance Portal v1.0 | © 2026
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

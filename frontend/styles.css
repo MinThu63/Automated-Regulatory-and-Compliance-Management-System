@@ -1,0 +1,196 @@
+/* ==========================================
+   GLDB Compliance Portal - Stylesheet
+   ========================================== */
+
+:root {
+  --sidebar-width: 220px;
+  --transition-speed: 0.3s;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: background var(--transition-speed), color var(--transition-speed);
+}
+
+/* ==========================================
+   Dark Mode
+   ========================================== */
+
+body.dark-mode { background: #1a1a2e !important; color: #e0e0e0; }
+body.dark-mode .bg-light { background: #16213e !important; }
+body.dark-mode .card { background: #0f3460; color: #e0e0e0; border: 1px solid #1a1a4e; }
+body.dark-mode .table { color: #e0e0e0; --bs-table-bg: transparent; --bs-table-striped-bg: rgba(255,255,255,0.03); --bs-table-hover-bg: rgba(255,255,255,0.05); }
+body.dark-mode .table td, body.dark-mode .table th { border-color: #2a2a5e; color: #e0e0e0; }
+body.dark-mode .table-striped>tbody>tr:nth-of-type(odd)>* { --bs-table-bg-type: rgba(255,255,255,0.03); color: #e0e0e0; }
+body.dark-mode .table-light, body.dark-mode .table-light th { background-color: #1a1a4e !important; color: #ccc !important; }
+body.dark-mode .table-danger { --bs-table-bg: rgba(220,53,69,0.15); color: #e0e0e0 !important; }
+body.dark-mode .table-danger td { color: #e0e0e0 !important; }
+body.dark-mode .table-warning { --bs-table-bg: rgba(255,193,7,0.1); color: #e0e0e0 !important; }
+body.dark-mode .table-warning td { color: #e0e0e0 !important; }
+body.dark-mode .table th { color: #adb5bd !important; }
+body.dark-mode .form-control, body.dark-mode .form-select { background: #16213e; color: #e0e0e0; border-color: #2a2a5e; }
+body.dark-mode .form-control::placeholder { color: #6c757d; }
+body.dark-mode .card-footer { background: #0a2647 !important; border-color: #1a1a4e; }
+body.dark-mode .nav-tabs { border-color: #2a2a5e; }
+body.dark-mode .nav-tabs .nav-link { color: #adb5bd; }
+body.dark-mode .nav-tabs .nav-link.active { background: #0f3460; color: #fff; border-color: #2a2a5e; }
+body.dark-mode .text-muted { color: #8a8a9e !important; }
+body.dark-mode .text-secondary { color: #8a8a9e !important; }
+body.dark-mode .alert-danger { background: #3d1f28; color: #f0a0a0; border-color: #5a2030; }
+body.dark-mode .page-link { background: #16213e; color: #e0e0e0; border-color: #2a2a5e; }
+body.dark-mode .page-item.active .page-link { background: #0d6efd; border-color: #0d6efd; }
+body.dark-mode .page-item.disabled .page-link { background: #0a1628; color: #4a4a6e; }
+body.dark-mode .btn-outline-secondary { color: #adb5bd; border-color: #4a4a6e; }
+body.dark-mode .btn-outline-success { color: #75d6a0; border-color: #198754; }
+body.dark-mode .form-label { color: #adb5bd; }
+body.dark-mode h4, body.dark-mode h5 { color: #e0e0e0; }
+body.dark-mode .badge.bg-warning { color: #1a1a2e !important; }
+body.dark-mode .welcome-banner { background: linear-gradient(135deg, #0a4da8 0%, #4a0e8f 100%); }
+body.dark-mode .app-footer { border-color: #1a1a4e; }
+
+/* ==========================================
+   Sidebar
+   ========================================== */
+
+.sidebar {
+  width: var(--sidebar-width);
+  min-height: 100vh;
+  transition: width var(--transition-speed);
+  overflow: hidden;
+}
+.sidebar .nav-link {
+  padding: 10px 20px;
+  border-radius: 6px;
+  margin: 2px 8px;
+  transition: background 0.2s;
+  position: relative;
+}
+.sidebar .nav-link:hover { background: rgba(255,255,255,0.1); }
+.sidebar .nav-link.active { background-color: #0d6efd !important; }
+.sidebar .nav-link svg { margin-right: 8px; }
+.sidebar .nav-badge {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.7rem;
+}
+
+@media (max-width: 768px) {
+  .sidebar { width: 60px; }
+  .sidebar .nav-link span, .sidebar .nav-badge, .sidebar .p-3 small { display: none; }
+  .sidebar .nav-link { padding: 12px 16px; text-align: center; }
+  .sidebar .nav-link svg { margin-right: 0; }
+}
+
+/* ==========================================
+   Cards & Tables
+   ========================================== */
+
+.card { border: none; border-radius: 12px; }
+.summary-card { transition: transform 0.15s; }
+.summary-card:hover { transform: translateY(-2px); }
+.table th {
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6c757d;
+}
+
+/* ==========================================
+   View Transitions
+   ========================================== */
+
+[id^="view-"] { animation: fadeIn var(--transition-speed) ease-in; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================
+   Login Overlay
+   ========================================== */
+
+#loginOverlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: #1a1a2e;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#loginOverlay.d-none { display: none !important; }
+
+/* ==========================================
+   Toast & Loading
+   ========================================== */
+
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: 9998; }
+.loading-spinner { text-align: center; padding: 40px; color: #6c757d; }
+.loading-spinner .spinner-border { width: 2rem; height: 2rem; }
+
+/* ==========================================
+   Pagination
+   ========================================== */
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 0;
+}
+.pagination-controls button { min-width: 80px; }
+.pagination-info { color: #6c757d; font-size: 0.85rem; }
+
+/* ==========================================
+   Header & User
+   ========================================== */
+
+.user-badge { font-size: 0.85rem; color: rgba(255,255,255,0.7); }
+.last-synced { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
+
+/* ==========================================
+   Welcome Banner
+   ========================================== */
+
+.welcome-banner {
+  background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+  border-radius: 12px;
+  padding: 20px 24px;
+  color: white;
+  margin-bottom: 20px;
+}
+.welcome-banner h5 { margin: 0 0 5px 0; }
+.welcome-banner p { margin: 0; opacity: 0.85; font-size: 0.9rem; }
+
+/* ==========================================
+   Footer
+   ========================================== */
+
+.app-footer {
+  padding: 12px 24px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #6c757d;
+  border-top: 1px solid #e9ecef;
+}
+
+/* ==========================================
+   Print Styles
+   ========================================== */
+
+@media print {
+  body { background: white !important; color: black !important; margin: 0; padding: 0; }
+  body * { visibility: hidden; }
+  #printableReport, #printableReport * { visibility: visible; }
+  #printableReport { display: block !important; position: absolute; top: 0; left: 0; width: 100%; padding: 20px; }
+  .sidebar, .navbar, .app-footer, #loginOverlay, .toast-container, .welcome-banner { display: none !important; }
+  .card { border: 1px solid #ddd !important; box-shadow: none !important; page-break-inside: avoid; }
+  .table { font-size: 0.8rem; }
+}
+#printableReport { display: none; }
