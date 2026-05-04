@@ -1102,6 +1102,11 @@ async function loadSources() {
     var tbody = document.getElementById('sourcesBody');
     tbody.innerHTML = '';
 
+    if (sources.length === 0) {
+      showEmpty('sourcesBody', 'No regulatory sources found.');
+      return;
+    }
+
     sources.forEach(function (source) {
       var tr = document.createElement('tr');
 
@@ -1117,10 +1122,70 @@ async function loadSources() {
       tdDate.textContent = formatDate(source.created_at);
       tr.appendChild(tdDate);
 
+      var tdActions = document.createElement('td');
+      var editBtn = document.createElement('button');
+      editBtn.className = 'btn btn-warning btn-sm me-1';
+      editBtn.textContent = 'Edit';
+      editBtn.addEventListener('click', function() { editSource(source); });
+      tdActions.appendChild(editBtn);
+
+      var deleteBtn = document.createElement('button');
+      deleteBtn.className = 'btn btn-danger btn-sm';
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.addEventListener('click', function() { deleteSource(source.source_id); });
+      tdActions.appendChild(deleteBtn);
+
+      tr.appendChild(tdActions);
       tbody.appendChild(tr);
     });
   } catch (err) {
     showError('Unable to load sources data. Please try again later.');
+  }
+}
+
+function editSource(source) {
+  document.getElementById('editSourceSection').classList.remove('d-none');
+  document.getElementById('editSourceName').value = source.source_name || '';
+  document.getElementById('editSourceUrl').value = source.base_url || '';
+  document.getElementById('editSourceId').value = source.source_id;
+}
+
+async function submitSourceEdit() {
+  try {
+    var id = document.getElementById('editSourceId').value;
+    var source_name = document.getElementById('editSourceName').value;
+    var base_url = document.getElementById('editSourceUrl').value;
+    var body = {};
+    if (source_name) body.source_name = source_name;
+    if (base_url) body.base_url = base_url;
+
+    var response = await fetch(API_BASE + '/api/regulatory-sources/' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!response.ok) throw new Error('Failed to update source');
+    document.getElementById('editSourceSection').classList.add('d-none');
+    loadSources();
+    showToast('Source updated successfully', 'success');
+  } catch (err) {
+    showToast('Failed to update source', 'danger');
+  }
+}
+
+function cancelSourceEdit() {
+  document.getElementById('editSourceSection').classList.add('d-none');
+}
+
+async function deleteSource(sourceId) {
+  if (!confirm('Are you sure you want to delete this source? This will also delete all regulations linked to it.')) return;
+  try {
+    var response = await fetch(API_BASE + '/api/regulatory-sources/' + sourceId, { method: 'DELETE' });
+    if (!response.ok) throw new Error('Failed to delete source');
+    loadSources();
+    showToast('Source deleted successfully', 'success');
+  } catch (err) {
+    showToast('Failed to delete source', 'danger');
   }
 }
 
@@ -1166,12 +1231,14 @@ async function loadRegulations() {
       return;
     }
 
-    // Update pagination controls
+    // Update pagination controls using renderPagination
     if (result.totalPages) {
       regTotalPages = result.totalPages;
-      document.getElementById('regPageInfo').textContent = 'Page ' + regCurrentPage + ' of ' + regTotalPages + ' (' + result.total + ' total)';
-      document.getElementById('regPrevBtn').disabled = regCurrentPage <= 1;
-      document.getElementById('regNextBtn').disabled = regCurrentPage >= regTotalPages;
+      var totalItems = result.total || 0;
+      renderPagination('regPagination', regCurrentPage, totalItems, function(page) {
+        regCurrentPage = page;
+        loadRegulations();
+      });
     }
 
     regulations.forEach(function (reg) {
@@ -1348,6 +1415,7 @@ function getImpactClass(impact) {
 }
 
 var allChangesData = [];
+var changesFilter = '';
 
 async function loadChanges() {
   try {
@@ -1361,17 +1429,30 @@ async function loadChanges() {
   }
 }
 
+function filterChanges(level) {
+  changesFilter = level;
+  changesPage = 1;
+  renderChangesTable();
+}
+
 function renderChangesTable() {
+  var changes = allChangesData;
+
+  // Apply impact filter
+  if (changesFilter) {
+    changes = changes.filter(function(c) { return c.impact_score === changesFilter; });
+  }
+
   var tbody = document.getElementById('changesBody');
   tbody.innerHTML = '';
 
-  if (allChangesData.length === 0) {
-    showEmpty('changesBody', 'No regulation changes found.');
+  if (changes.length === 0) {
+    showEmpty('changesBody', 'No regulation changes found for the selected filter.');
     document.getElementById('changesPagination').innerHTML = '';
     return;
   }
 
-  var pageData = paginateArray(allChangesData, changesPage);
+  var pageData = paginateArray(changes, changesPage);
 
   pageData.forEach(function (change) {
     var tr = document.createElement('tr');
@@ -1406,7 +1487,7 @@ function renderChangesTable() {
     tbody.appendChild(tr);
   });
 
-  renderPagination('changesPagination', changesPage, allChangesData.length, function(page) {
+  renderPagination('changesPagination', changesPage, changes.length, function(page) {
     changesPage = page;
     renderChangesTable();
   });
@@ -1745,6 +1826,10 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('policyForm').addEventListener('submit', submitPolicy);
   document.getElementById('editPolicyUpdateBtn').addEventListener('click', submitPolicyEdit);
   document.getElementById('editPolicyCancelBtn').addEventListener('click', cancelPolicyEdit);
+
+  // Attach handlers for source edit
+  document.getElementById('editSourceUpdateBtn').addEventListener('click', submitSourceEdit);
+  document.getElementById('editSourceCancelBtn').addEventListener('click', cancelSourceEdit);
 
   // Attach click handlers for audit filters
   document.getElementById('auditApplyBtn').addEventListener('click', applyAuditFilters);

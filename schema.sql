@@ -126,8 +126,14 @@ INSERT IGNORE INTO regulations (source_id, title, category, content, version) VA
 (1, 'Environmental Risk Management Guidelines', 'ESG', 'Banks must conduct scenario analysis on environmental risk.', 1.0);
 
 INSERT IGNORE INTO internal_policies (policy_name, description) VALUES 
-('GLDB Onboarding KYC Policy', 'Standard procedure for verifying MSME identities.'),
-('GLDB Green Finance Framework', 'Criteria for approving green supply chain loans.');
+('GLDB AML/CFT Compliance Policy', 'Automated eKYC and Enhanced Due Diligence (EDD) procedures for MSME onboarding, including AI-driven biometric verification, UBO screening, and shell company detection via third-party identity systems (e.g., Chekk). Mandates senior management approval for high-risk customer relationships.'),
+('GLDB KYC Onboarding Policy', 'Standard procedure for verifying MSME identities using digital document acquisition, biometric verification, and cross-referencing against localized internal blacklists and international sanctions lists.'),
+('GLDB Transaction Monitoring Policy', 'Continuous monitoring of all transactions using automated systems to detect suspicious activity, trade-based money laundering patterns, and shell company indicators. Includes escalation procedures for flagged transactions.'),
+('GLDB Data Privacy and PDPA Policy', 'Compliance with the Singapore Personal Data Protection Act (PDPA) 2012. Enforces consent-based data collection, data minimization for corporate onboarding, and explicit mechanisms for data subject rights including access, correction, and portability of MSME director and UBO personal data.'),
+('GLDB Green Finance Framework', 'Criteria and risk assessment procedures for approving green supply chain loans and ESG-aligned financing products. Includes environmental risk scenario analysis requirements aligned with MAS Environmental Risk Management Guidelines.'),
+('GLDB Credit and Liquidity Risk Policy', 'Risk management framework for uncollateralized business term loans and supply chain finance products. Covers credit risk assessment, liquidity ratio monitoring, and capital adequacy requirements aligned with Basel III and MAS prudential standards.'),
+('GLDB Cybersecurity and TRM Policy', 'Alignment with MAS Technology Risk Management (TRM) Guidelines. Includes Vulnerability Disclosure Policy (VDP) for ethical security researchers, rules of engagement prohibiting DDoS/phishing/social engineering, and incident response procedures.'),
+('GLDB Wholesale Banking Operations Policy', 'Compliance with MAS Digital Wholesale Bank (DWB) license conditions. Restricts all banking services, deposit-taking, and loan products exclusively to non-retail customers (SMEs, MSMEs, corporate clients). Enforces minimum paid-up capital of S$100 million and high deposit minimums for individual exceptions.');
 
 INSERT IGNORE INTO regulation_changes (reg_id, previous_version, new_version, semantic_differences, impact_score) VALUES 
 (1, 1.0, 1.1, 'Added mandatory automated transaction monitoring for jurisdictions classified as high risk.', 'Critical');

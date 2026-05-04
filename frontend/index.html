@@ -559,6 +559,30 @@
           </div>
         </div>
 
+        <!-- Edit Source Section (hidden by default) -->
+        <div id="editSourceSection" class="d-none">
+          <div class="card shadow-sm mb-4 border-warning">
+            <div class="card-body">
+              <h5 class="card-title">Edit Source</h5>
+              <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                  <label for="editSourceName" class="form-label fw-semibold text-secondary">Source Name</label>
+                  <input type="text" class="form-control" id="editSourceName">
+                </div>
+                <div class="col-md-5">
+                  <label for="editSourceUrl" class="form-label fw-semibold text-secondary">Base URL</label>
+                  <input type="text" class="form-control" id="editSourceUrl">
+                </div>
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                  <button type="button" class="btn btn-warning" id="editSourceUpdateBtn">Update</button>
+                  <button type="button" class="btn btn-secondary" id="editSourceCancelBtn">Cancel</button>
+                </div>
+              </div>
+              <input type="hidden" id="editSourceId">
+            </div>
+          </div>
+        </div>
+
         <!-- Sources Table -->
         <div class="card shadow-sm">
           <div class="card-body p-0">
@@ -568,6 +592,7 @@
                   <th>Source Name</th>
                   <th>Base URL</th>
                   <th>Created Date</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="sourcesBody"></tbody>
@@ -696,11 +721,7 @@
         </div>
 
         <!-- Pagination Controls -->
-        <div class="pagination-controls" id="regPagination">
-          <button class="btn btn-outline-primary btn-sm" id="regPrevBtn" onclick="changeRegPage(-1)" disabled>Previous</button>
-          <span class="pagination-info" id="regPageInfo">Page 1 of 1</span>
-          <button class="btn btn-outline-primary btn-sm" id="regNextBtn" onclick="changeRegPage(1)" disabled>Next</button>
-        </div>
+        <div class="card-footer bg-white" id="regPagination"></div>
 
       </div>
       <!-- END REGULATIONS VIEW -->
@@ -709,6 +730,27 @@
       <div id="view-changes" class="d-none">
 
         <h4 class="mb-3">Regulation Changes</h4>
+
+        <!-- Impact Score Filter -->
+        <div class="card shadow-sm mb-3">
+          <div class="card-body py-2">
+            <div class="row align-items-center">
+              <div class="col-md-3">
+                <label for="changesFilterSelect" class="form-label fw-semibold text-secondary mb-0">Filter by Impact Score</label>
+              </div>
+              <div class="col-md-3">
+                <select id="changesFilterSelect" class="form-select form-select-sm" onchange="filterChanges(this.value)">
+                  <option value="">All Levels</option>
+                  <option value="Critical">Critical</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="card shadow-sm">
           <div class="card-body p-0">
             <table class="table table-striped table-hover mb-0">

@@ -58,7 +58,15 @@ body.dark-mode .app-footer { border-color: #1a1a4e; }
   min-height: 100vh;
   transition: width var(--transition-speed);
   overflow: hidden;
+  flex-shrink: 0;
 }
+
+/* Main content area - prevent width inconsistency across views */
+.flex-grow-1 {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
 .sidebar .nav-link {
   padding: 10px 20px;
   border-radius: 6px;
