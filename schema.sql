@@ -103,6 +103,18 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
+-- 10. embeddings (RAG vector store)
+CREATE TABLE IF NOT EXISTS embeddings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    source_type ENUM('regulation', 'policy') NOT NULL,
+    source_id INT NOT NULL,
+    chunk_index INT NOT NULL DEFAULT 0,
+    chunk_text TEXT NOT NULL,
+    embedding JSON NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_chunk (source_type, source_id, chunk_index)
+);
+
 -- =============================================
 -- Seed Data
 -- =============================================
@@ -113,13 +125,7 @@ INSERT IGNORE INTO users (username, email, password, role) VALUES
 ('Admin User', 'admin@gldb.com', '$2b$10$xtJXo9NyK54qbDW88jeisefWGdzzrt9IvqJBY.5DJHceoucS27Dp2', 'Admin');
 
 INSERT IGNORE INTO regulatory_sources (source_name, base_url) VALUES 
-('MAS', 'https://www.mas.gov.sg/regulation'),
-('FATF', 'https://www.fatf-gafi.org'),
-('FinCEN', 'https://www.fincen.gov'),
-('ECB', 'https://www.ecb.europa.eu'),
-('FCA', 'https://www.fca.org.uk'),
-('BIS', 'https://www.bis.org'),
-('HKMA', 'https://www.hkma.gov.hk');
+('MAS', 'https://www.mas.gov.sg/regulation');
 
 INSERT IGNORE INTO regulations (source_id, title, category, content, version) VALUES 
 (1, 'Notice 626 Prevention of Money Laundering', 'AML', 'Updated CDD rules for cross-border MSME transfers.', 1.1),
