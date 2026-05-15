@@ -46,16 +46,16 @@
 │   ┌─────────────┐    ┌──────────────┐    ┌──────────────┐                  │
 │   │  CHUNKING   │───▶│  EMBEDDING   │───▶│ VECTOR STORE │                  │
 │   │             │    │              │    │              │                  │
-│   │ Split text  │    │ OpenAI       │    │ MySQL        │                  │
-│   │ into ~500   │    │ text-embed-  │    │ embeddings   │                  │
-│   │ char chunks │    │ ding-3-small │    │ table (JSON) │                  │
+│   │ Split text  │    │ OpenAI       │    │ Chroma DB    │                  │
+│   │ into ~500   │    │ text-embed-  │    │ (localhost:  │                  │
+│   │ char chunks │    │ ding-3-small │    │  8000)       │                  │
 │   └─────────────┘    └──────────────┘    └──────┬───────┘                  │
 │                                                  │                          │
 │   ┌─────────────┐    ┌──────────────┐           │                          │
 │   │  RETRIEVER  │◀───│ QUERY ENCODE │◀──────────┘                          │
-│   │             │    │              │  cosine similarity                    │
-│   │ Top-K most  │    │ Convert query│  search                              │
-│   │ relevant    │    │ to vector    │                                      │
+│   │             │    │              │  native vector                        │
+│   │ Top-K most  │    │ Convert query│  similarity search                   │
+│   │ relevant    │    │ to vector    │  (Chroma handles)                    │
 │   │ chunks      │    │              │                                      │
 │   └──────┬──────┘    └──────────────┘                                      │
 │          │                                                                  │
@@ -108,11 +108,6 @@
 │   │ (3 roles)        │  │ (assigned work)   │  │ (all actions +     │      │
 │   └──────────────────┘  └───────────────────┘  │  LLM calls logged) │      │
 │                                                 └────────────────────┘      │
-│   ┌──────────────────┐                                                      │
-│   │   embeddings     │  ← NEW: RAG vector store                             │
-│   │ (regulation +    │  Stores chunked text + 1536-dim vectors              │
-│   │  policy vectors) │  Enables semantic similarity search                  │
-│   └──────────────────┘                                                      │
 │                                                                             │
 │   Connection: db.js (mysql2 connection pool, credentials from .env)         │
 │                                                                             │
@@ -196,13 +191,14 @@
 │  BACKEND          │  AI / RAG          │  DATA           │
 │  ─────────────    │  ─────────────     │  ──────────     │
 │  Node.js          │  GPT-4o-mini       │  MySQL (Azure)  │
-│  Express.js       │  text-embedding-   │  10 tables      │
-│  bcryptjs         │    3-small         │  (incl. vectors)│
-│  axios            │  RAG Pipeline      │  Foreign keys   │
-│  cheerio          │  Cosine Similarity │                 │
-│  node-cron        │  Vector Store      │                 │
-│  dotenv           │  Audit Logging     │                 │
-│  openai SDK       │                    │                 │
+│  Express.js       │  text-embedding-   │  9 tables       │
+│  bcryptjs         │    3-small         │  Foreign keys   │
+│  axios            │  Chroma (Vector DB)│                 │
+│  cheerio          │  RAG Pipeline      │  Chroma         │
+│  node-cron        │  PII Filter        │  2 collections  │
+│  dotenv           │  Audit Logging     │  (regulations,  │
+│  openai SDK       │                    │   policies)     │
+│  chromadb         │                    │                 │
 │                   │                    │                 │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
@@ -225,11 +221,11 @@
 | API-first (no server-side rendering) | Matches GLDB's cloud-native architecture; frontend can be replaced independently |
 | MAS only for Phase 1 | Patrick's recommendation; validate with one source before expanding |
 | RAG over direct prompting | Grounds LLM responses in GLDB's actual policies; reduces hallucinations |
-| MySQL for vector store | Avoids adding new infrastructure (Pinecone, Weaviate) for POC; JSON column stores embeddings |
+| Chroma for vector store | Lightweight, runs locally, native vector search; recommended by lecturer over MySQL JSON approach |
 | GPT-4o-mini (not GPT-4) | Cost-effective for POC volume; sufficient quality for classification tasks |
 | text-embedding-3-small | Cheapest OpenAI embedding model; 1536 dimensions; good enough for POC |
-| Cosine similarity in-app | Simple, no external vector DB needed; works for <1000 embeddings |
 | Audit all LLM calls | Patrick's requirement; MAS compliance needs full traceability |
+| PII filter before all OpenAI calls | Patrick's requirement; PDPA compliance; no personal data leaves the server |
 | Keyword fallback removed | Patrick wants pure LLM; defaults to "Medium" if API unavailable |
 | Biweekly cron + startup | Matches regulatory review cycle; immediate data on deploy |
 

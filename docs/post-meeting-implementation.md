@@ -115,9 +115,9 @@ Created `services/ragEngine.js` — a complete RAG pipeline with all components:
 | External Knowledge Source | MySQL (regulations + policies) | `db.js` |
 | Text Chunking | `chunkText()` — splits at sentence boundaries, ~500 chars | `ragEngine.js` |
 | Embedding Model | OpenAI `text-embedding-3-small` (1536 dimensions) | `ragEngine.js` |
-| Vector Database | `embeddings` table in MySQL (JSON vectors) | `schema.sql` |
+| Vector Database | **Chroma** (localhost:8000, 2 collections) | `ragEngine.js` |
 | Query Encoder | Same embedding model converts queries to vectors | `ragEngine.js` |
-| Retriever | Cosine similarity search across stored embeddings | `ragEngine.js` |
+| Retriever | Chroma native vector similarity search (top-K) | `ragEngine.js` |
 | Prompt Augmentation | Injects top-K relevant chunks into LLM prompt | `ragEngine.js` |
 | LLM Generator | GPT-4o-mini generates impact scores and gap analysis | `ragEngine.js` |
 | Updater | Auto-embeds new regulations on ingestion + startup | `feedIntegrator.js` |
@@ -364,25 +364,24 @@ STEP 3: AUGMENTATION & GENERATION
 
 ## 6. Database Changes
 
-**New Table Added:**
+**MySQL (9 tables — structured data):**
+- `regulatory_sources` — MAS only (Phase 1)
+- `regulations` — scraped MAS notices
+- `regulation_changes` — version diffs with LLM impact scores
+- `alerts` — auto-generated severity-categorized alerts
+- `internal_policies` — 8 GLDB PMPs
+- `compliance_gaps` — LLM-identified gaps
+- `tasks` — assigned compliance work items
+- `users` — 3 roles (Compliance Officer, Internal Auditor, Admin)
+- `audit_logs` — all actions + LLM calls logged
 
-```sql
--- 10. embeddings (RAG vector store)
-CREATE TABLE IF NOT EXISTS embeddings (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    source_type ENUM('regulation', 'policy') NOT NULL,
-    source_id INT NOT NULL,
-    chunk_index INT NOT NULL DEFAULT 0,
-    chunk_text TEXT NOT NULL,
-    embedding JSON NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_chunk (source_type, source_id, chunk_index)
-);
-```
+**Chroma (2 collections — vector search):**
+- `regulations` — 28 embedded chunks from MAS regulations
+- `policies` — 8 embedded chunks from GLDB internal policies
 
-**Seed Data Updated:**
-- Regulatory sources reduced from 7 to 1 (MAS only)
-- Internal policies expanded to 8 GLDB-specific PMPs covering AML, KYC, Transaction Monitoring, PDPA, Green Finance, Credit Risk, Cybersecurity, and Wholesale Banking Operations
+**Seed Data:**
+- Regulatory sources: 1 (MAS only)
+- Internal policies: 8 GLDB-specific PMPs (AML, KYC, Transaction Monitoring, PDPA, Green Finance, Credit Risk, Cybersecurity, Wholesale Banking)
 
 ---
 
@@ -437,12 +436,14 @@ CREATE TABLE IF NOT EXISTS embeddings (
 │  BACKEND          │  AI/RAG            │  DATA           │
 │  ─────────────    │  ─────────────     │  ──────────     │
 │  Node.js          │  OpenAI GPT-4o-mini│  MySQL (Azure)  │
-│  Express.js       │  text-embedding-   │  10 tables      │
-│  bcryptjs         │    3-small         │  (incl. vectors)│
-│  axios            │  RAG Pipeline      │  Foreign keys   │
-│  cheerio          │  Cosine Similarity │                 │
-│  node-cron        │  Vector Store      │                 │
-│  dotenv           │                    │                 │
+│  Express.js       │  text-embedding-   │  9 tables       │
+│  bcryptjs         │    3-small         │  Foreign keys   │
+│  axios            │  Chroma (Vector DB)│                 │
+│  cheerio          │  RAG Pipeline      │  Chroma         │
+│  node-cron        │  PII Filter        │  2 collections  │
+│  dotenv           │                    │  (localhost:8000)│
+│  openai SDK       │                    │                 │
+│  chromadb         │                    │                 │
 │                   │                    │                 │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │

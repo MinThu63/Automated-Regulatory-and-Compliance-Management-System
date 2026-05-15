@@ -103,18 +103,6 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- 10. embeddings (RAG vector store)
-CREATE TABLE IF NOT EXISTS embeddings (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    source_type ENUM('regulation', 'policy') NOT NULL,
-    source_id INT NOT NULL,
-    chunk_index INT NOT NULL DEFAULT 0,
-    chunk_text TEXT NOT NULL,
-    embedding JSON NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_chunk (source_type, source_id, chunk_index)
-);
-
 -- =============================================
 -- Seed Data
 -- =============================================

@@ -351,6 +351,7 @@ External Regulatory Websites (7 sources + MAS API)
 | Scheduling | node-cron | Automated biweekly feed integration |
 | Configuration | dotenv | Externalized credentials and URLs |
 | AI/LLM | OpenAI API | Impact assessment, regulatory analysis, gap comparison |
+| Vector DB | Chroma | Semantic vector search for RAG pipeline |
 | Frontend | HTML + Bootstrap 5 + Vanilla JS | Decoupled dashboard UI |
 | Visualization | Chart.js (CDN) | Pie, bar, doughnut, and line charts |
 

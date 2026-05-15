@@ -1,10 +1,12 @@
 const OpenAI = require('openai');
+const { ChromaClient } = require('chromadb');
 const pool = require('../db');
 const { piiGuard } = require('./piiFilter');
 
 // =============================================
 // RAG Engine — Retrieval-Augmented Generation
-// Handles embeddings, vector search, and LLM generation
+// Uses Chroma as vector database
+// Uses OpenAI for embeddings and generation
 // =============================================
 
 const openai = new OpenAI({
@@ -13,10 +15,40 @@ const openai = new OpenAI({
 
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const EMBEDDING_MODEL = 'text-embedding-3-small';
+const CHROMA_URL = process.env.CHROMA_URL || 'http://localhost:8000';
+
+// Chroma client and collections
+var chroma = new ChromaClient({ path: CHROMA_URL });
+var regulationsCollection = null;
+var policiesCollection = null;
+
+// =============================================
+// Initialize Chroma Collections
+// =============================================
+
+async function initChroma() {
+  try {
+    regulationsCollection = await chroma.getOrCreateCollection({
+      name: 'regulations',
+      metadata: { description: 'MAS regulatory documents' }
+    });
+
+    policiesCollection = await chroma.getOrCreateCollection({
+      name: 'policies',
+      metadata: { description: 'GLDB internal policies' }
+    });
+
+    console.log('[RAG] Chroma collections initialized (regulations + policies)');
+    return true;
+  } catch (err) {
+    console.error('[RAG] Chroma connection failed:', err.message);
+    console.error('[RAG] Make sure Chroma is running: chroma run --path ./chroma_data --port 8000');
+    return false;
+  }
+}
 
 // =============================================
 // 1. TEXT CHUNKING
-// Breaks large documents into smaller chunks
 // =============================================
 
 function chunkText(text, maxChunkSize = 500) {
@@ -45,15 +77,14 @@ function chunkText(text, maxChunkSize = 500) {
 }
 
 // =============================================
-// 2. EMBEDDING GENERATION
-// Converts text into numerical vectors using OpenAI
+// 2. EMBEDDING GENERATION (OpenAI)
 // =============================================
 
 async function generateEmbedding(text) {
   try {
     var response = await openai.embeddings.create({
       model: EMBEDDING_MODEL,
-      input: text.substring(0, 8000) // Token limit safety
+      input: text.substring(0, 8000)
     });
     return response.data[0].embedding;
   } catch (err) {
@@ -63,33 +94,15 @@ async function generateEmbedding(text) {
 }
 
 // =============================================
-// 3. VECTOR STORAGE (MySQL-based for POC)
-// Stores embeddings in a dedicated table
-// =============================================
-
-async function storeEmbedding(sourceType, sourceId, chunkIndex, chunkText, embedding) {
-  try {
-    var embeddingJson = JSON.stringify(embedding);
-    await pool.query(
-      `INSERT INTO embeddings (source_type, source_id, chunk_index, chunk_text, embedding)
-       VALUES (?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE chunk_text = VALUES(chunk_text), embedding = VALUES(embedding)`,
-      [sourceType, sourceId, chunkIndex, chunkText, embeddingJson]
-    );
-  } catch (err) {
-    console.error('[RAG] Store embedding failed:', err.message);
-  }
-}
-
-// =============================================
-// 4. EMBED A REGULATION (called when new regulation is stored)
+// 3. EMBED A REGULATION INTO CHROMA
 // =============================================
 
 async function embedRegulation(regId, title, content) {
+  if (!regulationsCollection) return;
+
   console.log('[RAG] Embedding regulation:', title);
 
-  // PII GUARD — Block if personal data detected before sending to OpenAI
-  var { piiGuard } = require('./piiFilter');
+  // PII GUARD
   var piiCheck = await piiGuard(title + ' ' + content, 'Embedding regulation: ' + title);
   if (!piiCheck.allowed) {
     console.log('[RAG] Embedding blocked by PII filter:', piiCheck.reason);
@@ -99,24 +112,42 @@ async function embedRegulation(regId, title, content) {
   var fullText = title + '. ' + content;
   var chunks = chunkText(fullText);
 
+  var ids = [];
+  var documents = [];
+  var embeddings = [];
+  var metadatas = [];
+
   for (var i = 0; i < chunks.length; i++) {
     var embedding = await generateEmbedding(chunks[i]);
     if (embedding) {
-      await storeEmbedding('regulation', regId, i, chunks[i], embedding);
+      ids.push('reg_' + regId + '_chunk_' + i);
+      documents.push(chunks[i]);
+      embeddings.push(embedding);
+      metadatas.push({ source_id: regId, title: title, chunk_index: i, type: 'regulation' });
     }
   }
-  console.log('[RAG] Stored', chunks.length, 'chunks for regulation:', title);
+
+  if (ids.length > 0) {
+    await regulationsCollection.upsert({
+      ids: ids,
+      documents: documents,
+      embeddings: embeddings,
+      metadatas: metadatas
+    });
+    console.log('[RAG] Stored', ids.length, 'chunks for regulation:', title);
+  }
 }
 
 // =============================================
-// 5. EMBED A POLICY (called when policy is stored/updated)
+// 4. EMBED A POLICY INTO CHROMA
 // =============================================
 
 async function embedPolicy(policyId, policyName, description) {
+  if (!policiesCollection) return;
+
   console.log('[RAG] Embedding policy:', policyName);
 
-  // PII GUARD — Block if personal data detected before sending to OpenAI
-  var { piiGuard } = require('./piiFilter');
+  // PII GUARD
   var piiCheck = await piiGuard(policyName + ' ' + description, 'Embedding policy: ' + policyName);
   if (!piiCheck.allowed) {
     console.log('[RAG] Embedding blocked by PII filter:', piiCheck.reason);
@@ -126,77 +157,79 @@ async function embedPolicy(policyId, policyName, description) {
   var fullText = policyName + '. ' + description;
   var chunks = chunkText(fullText);
 
+  var ids = [];
+  var documents = [];
+  var embeddings = [];
+  var metadatas = [];
+
   for (var i = 0; i < chunks.length; i++) {
     var embedding = await generateEmbedding(chunks[i]);
     if (embedding) {
-      await storeEmbedding('policy', policyId, i, chunks[i], embedding);
+      ids.push('pol_' + policyId + '_chunk_' + i);
+      documents.push(chunks[i]);
+      embeddings.push(embedding);
+      metadatas.push({ source_id: policyId, policy_name: policyName, chunk_index: i, type: 'policy' });
     }
   }
-  console.log('[RAG] Stored', chunks.length, 'chunks for policy:', policyName);
-}
 
-// =============================================
-// 6. VECTOR SIMILARITY SEARCH (Cosine Similarity)
-// Finds the most relevant chunks for a query
-// =============================================
-
-function cosineSimilarity(vecA, vecB) {
-  var dotProduct = 0;
-  var normA = 0;
-  var normB = 0;
-  for (var i = 0; i < vecA.length; i++) {
-    dotProduct += vecA[i] * vecB[i];
-    normA += vecA[i] * vecA[i];
-    normB += vecB[i] * vecB[i];
+  if (ids.length > 0) {
+    await policiesCollection.upsert({
+      ids: ids,
+      documents: documents,
+      embeddings: embeddings,
+      metadatas: metadatas
+    });
+    console.log('[RAG] Stored', ids.length, 'chunks for policy:', policyName);
   }
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
+
+// =============================================
+// 5. RETRIEVE RELEVANT CHUNKS FROM CHROMA
+// =============================================
 
 async function retrieveRelevantChunks(query, sourceType, topK = 5) {
-  // Generate embedding for the query
+  var collection = sourceType === 'regulation' ? regulationsCollection : policiesCollection;
+  if (!collection) return [];
+
   var queryEmbedding = await generateEmbedding(query);
   if (!queryEmbedding) return [];
 
-  // Fetch all embeddings of the specified type
-  var [rows] = await pool.query(
-    'SELECT source_id, chunk_index, chunk_text, embedding FROM embeddings WHERE source_type = ?',
-    [sourceType]
-  );
+  try {
+    var results = await collection.query({
+      queryEmbeddings: [queryEmbedding],
+      nResults: topK
+    });
 
-  if (rows.length === 0) return [];
+    if (!results || !results.documents || !results.documents[0]) return [];
 
-  // Calculate similarity scores
-  var scored = rows.map(function (row) {
-    var storedEmbedding = JSON.parse(row.embedding);
-    var similarity = cosineSimilarity(queryEmbedding, storedEmbedding);
-    return {
-      source_id: row.source_id,
-      chunk_text: row.chunk_text,
-      similarity: similarity
-    };
-  });
-
-  // Sort by similarity (highest first) and return top K
-  scored.sort(function (a, b) { return b.similarity - a.similarity; });
-  return scored.slice(0, topK);
+    return results.documents[0].map(function (doc, i) {
+      return {
+        chunk_text: doc,
+        metadata: results.metadatas[0][i],
+        distance: results.distances ? results.distances[0][i] : null
+      };
+    });
+  } catch (err) {
+    console.error('[RAG] Chroma query failed:', err.message);
+    return [];
+  }
 }
 
 // =============================================
-// 7. RAG-POWERED IMPACT ASSESSMENT
-// Retrieves relevant policies, then asks LLM to assess impact
+// 6. RAG-POWERED IMPACT ASSESSMENT
 // =============================================
 
 async function assessImpactRAG(item) {
   var startTime = Date.now();
 
-  // PII GUARD — Block content if personal data detected
+  // PII GUARD
   var piiCheck = await piiGuard(item.title + ' ' + item.content, 'Impact Assessment: ' + item.title);
   if (!piiCheck.allowed) {
     console.log('[RAG] Impact assessment blocked by PII filter:', piiCheck.reason);
-    return 'Medium'; // Safe default when blocked
+    return 'Medium';
   }
 
-  // RETRIEVAL: Find relevant internal policies for context
+  // RETRIEVAL: Find relevant internal policies
   var relevantPolicies = await retrieveRelevantChunks(
     item.title + ' ' + item.content,
     'policy',
@@ -232,7 +265,6 @@ Impact scoring criteria:
 - Low: Informational, minor updates, or general guidance with no immediate action required`;
 
   try {
-    // GENERATION
     var response = await openai.chat.completions.create({
       model: OPENAI_MODEL,
       messages: [{ role: 'user', content: prompt }],
@@ -251,11 +283,10 @@ Impact scoring criteria:
       impactScore = 'Medium';
     }
 
-    // Log LLM interaction
     await logLLMCall('IMPACT_ASSESSMENT', prompt, content, item.title, impactScore, duration, relevantPolicies.length);
 
     console.log('[RAG] Impact assessed:', impactScore, '—', parsed.reasoning || '');
-    console.log('[RAG] Retrieved', relevantPolicies.length, 'policy chunks for context');
+    console.log('[RAG] Retrieved', relevantPolicies.length, 'policy chunks from Chroma');
     return impactScore;
 
   } catch (err) {
@@ -267,14 +298,12 @@ Impact scoring criteria:
 }
 
 // =============================================
-// 8. RAG-POWERED GAP ANALYSIS
-// Retrieves relevant regulation chunks + policy chunks, then compares
+// 7. RAG-POWERED GAP ANALYSIS
 // =============================================
 
 async function analyzeGapRAG(regId, policyId) {
   var startTime = Date.now();
 
-  // Fetch full regulation and policy from DB
   var [regs] = await pool.query('SELECT title, content FROM regulations WHERE reg_id = ?', [regId]);
   var [policies] = await pool.query('SELECT policy_name, description FROM internal_policies WHERE policy_id = ?', [policyId]);
 
@@ -285,26 +314,24 @@ async function analyzeGapRAG(regId, policyId) {
   var regulation = regs[0];
   var policy = policies[0];
 
-  // PII GUARD — Block content if personal data detected in regulation
+  // PII GUARD
   var regPiiCheck = await piiGuard(regulation.content, 'Gap Analysis (regulation): ' + regulation.title);
   if (!regPiiCheck.allowed) {
     return { has_gaps: false, gaps: [], summary: 'Blocked: PII detected in regulation content. ' + regPiiCheck.reason };
   }
 
-  // PII GUARD — Block content if personal data detected in policy
   var polPiiCheck = await piiGuard(policy.description, 'Gap Analysis (policy): ' + policy.policy_name);
   if (!polPiiCheck.allowed) {
     return { has_gaps: false, gaps: [], summary: 'Blocked: PII detected in policy content. ' + polPiiCheck.reason };
   }
 
-  // RETRIEVAL: Get relevant regulation chunks for deeper context
+  // RETRIEVAL from Chroma
   var relevantRegChunks = await retrieveRelevantChunks(
     policy.policy_name + ' ' + policy.description,
     'regulation',
     3
   );
 
-  // RETRIEVAL: Get relevant policy chunks for deeper context
   var relevantPolicyChunks = await retrieveRelevantChunks(
     regulation.title + ' ' + regulation.content,
     'policy',
@@ -344,7 +371,6 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 {"has_gaps": true|false, "gaps": [{"description": "specific gap description", "severity": "Critical|High|Medium|Low", "recommendation": "what GLDB should do to close this gap"}], "summary": "one sentence overall assessment", "compliance_score": 0-100}`;
 
   try {
-    // GENERATION
     var response = await openai.chat.completions.create({
       model: OPENAI_MODEL,
       messages: [{ role: 'user', content: prompt }],
@@ -357,7 +383,6 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 
     var parsed = JSON.parse(content);
 
-    // Log LLM interaction
     await logLLMCall(
       'GAP_ANALYSIS',
       prompt,
@@ -369,7 +394,7 @@ Respond with ONLY a JSON object (no markdown, no explanation):
     );
 
     console.log('[RAG] Gap analysis complete:', parsed.has_gaps ? (parsed.gaps ? parsed.gaps.length : 0) + ' gaps found' : 'No gaps');
-    console.log('[RAG] Retrieved', relevantRegChunks.length + relevantPolicyChunks.length, 'chunks for context');
+    console.log('[RAG] Retrieved', relevantRegChunks.length + relevantPolicyChunks.length, 'chunks from Chroma');
     return parsed;
 
   } catch (err) {
@@ -381,8 +406,7 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 }
 
 // =============================================
-// 9. LLM AUDIT LOGGING
-// Records every LLM call for traceability (Patrick's requirement)
+// 8. LLM AUDIT LOGGING
 // =============================================
 
 async function logLLMCall(actionType, inputPrompt, outputResponse, targetDescription, result, durationMs, chunksRetrieved) {
@@ -397,6 +421,7 @@ async function logLLMCall(actionType, inputPrompt, outputResponse, targetDescrip
         JSON.stringify({
           model: OPENAI_MODEL,
           embedding_model: EMBEDDING_MODEL,
+          vector_db: 'Chroma',
           input: inputPrompt.substring(0, 1500),
           output: outputResponse.substring(0, 1500),
           target: targetDescription,
@@ -413,28 +438,31 @@ async function logLLMCall(actionType, inputPrompt, outputResponse, targetDescrip
 }
 
 // =============================================
-// 10. EMBED ALL EXISTING DATA (one-time initialization)
-// Call this to build the vector store from existing DB records
+// 9. EMBED ALL EXISTING DATA (initialization)
 // =============================================
 
 async function embedAllExistingData() {
-  console.log('[RAG] Embedding all existing regulations and policies...');
+  var chromaReady = await initChroma();
+  if (!chromaReady) {
+    console.error('[RAG] Cannot embed data — Chroma is not running');
+    return;
+  }
 
-  // Embed all regulations
+  console.log('[RAG] Embedding all existing regulations and policies into Chroma...');
+
   var [regulations] = await pool.query('SELECT reg_id, title, content FROM regulations');
   console.log('[RAG] Found', regulations.length, 'regulations to embed');
   for (var reg of regulations) {
     await embedRegulation(reg.reg_id, reg.title, reg.content);
   }
 
-  // Embed all policies
   var [policies] = await pool.query('SELECT policy_id, policy_name, description FROM internal_policies');
   console.log('[RAG] Found', policies.length, 'policies to embed');
   for (var pol of policies) {
     await embedPolicy(pol.policy_id, pol.policy_name, pol.description);
   }
 
-  console.log('[RAG] Embedding complete. Vector store ready.');
+  console.log('[RAG] Embedding complete. Chroma vector store ready.');
 }
 
 // =============================================
@@ -442,6 +470,7 @@ async function embedAllExistingData() {
 // =============================================
 
 module.exports = {
+  initChroma,
   chunkText,
   generateEmbedding,
   embedRegulation,
